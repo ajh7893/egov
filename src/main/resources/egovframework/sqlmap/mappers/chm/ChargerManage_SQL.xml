@@ -1,0 +1,151 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="ChargerManageDAO">
+
+    <!-- 제공책임관 목록 조회 -->
+    <select id="selectRspnofcrChargerList" parameterType="ChargerManageVO" resultType="ChargerManageVO">
+        /* ChargerManageDAO.selectRspnofcrChargerList */
+        SELECT * FROM (
+            SELECT ROW_NUMBER() OVER(ORDER BY INSTT_NM, PROVD_RSPNOFCR_NM) AS RN, TB.* FROM (
+                SELECT
+                    TPDR.pvsn_inst_cd AS PROVD_INSTT_CODE
+                    ,TPDR.pvsn_rbprsn_nm AS PROVD_RSPNOFCR_NM
+                    ,TPDR.DEPT_NM
+                    ,TPIC.inst_cd AS INSTT_CODE
+                    ,TPIC.inst_nm AS INSTT_NM
+                    ,TPDR.TELNO
+                    ,TPDR.eml_addr AS EMAIL
+                    ,TPDR.ATCH_FILE_ID
+                    ,'일반' AS INSTT_TY
+                    ,'Y' AS BASE_ADMINISTRATION_MANAGER_TOKN
+                FROM
+                    tn_pub_data_rspnofcr TPDR
+                    INNER JOIN tc_pubs_instt_code_info TPIC ON TPIC.inst_cd = TPDR.pvsn_inst_cd
+                WHERE 1=1
+                    <if test='searchKeyword2 != null and searchKeyword2 != ""'>
+                        <choose>
+                            <when test='searchCondition5 == "Y"'>
+                                AND TPDR.pvsn_inst_cd IN (
+                                    SELECT inst_cd
+                                    FROM tc_pubs_instt_code_info
+                                    WHERE up_inst_cd = #{searchKeyword2}
+                                    AND srch_yn = 'Y'
+                                    OR inst_cd = #{searchKeyword2}
+                                )
+                            </when>
+                            <otherwise>
+                                AND TPDR.pvsn_inst_cd = #{searchKeyword2}
+                            </otherwise>
+                        </choose>
+                    </if>
+                    <if test='searchKeyword3 != null and searchKeyword3 != ""'>
+                        AND TPDR.pvsn_rbprsn_nm LIKE '%'||#{searchKeyword3}||'%'
+                    </if>
+            ) TB
+        ) TB_ALL
+        <if test="recordCountPerPage > 0">
+            WHERE RN BETWEEN #{firstIndex} AND #{firstIndex} + #{recordCountPerPage} - 1
+        </if>
+    </select>
+
+    <!-- 제공책임관 총 개수 -->
+    <select id="selectRspnofcrChargerTotalCnt" parameterType="ChargerManageVO" resultType="int">
+        /* ChargerManageDAO.selectRspnofcrChargerTotalCnt */
+        SELECT COUNT(*) AS CNT
+        FROM
+            tn_pub_data_rspnofcr TPDR
+            INNER JOIN tc_pubs_instt_code_info TPIC ON TPIC.inst_cd = TPDR.pvsn_inst_cd
+        WHERE 1=1
+            <if test='searchKeyword2 != null and searchKeyword2 != ""'>
+                <choose>
+                    <when test='searchCondition5 == "Y"'>
+                        AND TPDR.pvsn_inst_cd IN (
+                            SELECT inst_cd
+                            FROM tc_pubs_instt_code_info
+                            WHERE up_inst_cd = #{searchKeyword2}
+                            AND srch_yn = 'Y'
+                            OR inst_cd = #{searchKeyword2}
+                        )
+                    </when>
+                    <otherwise>
+                        AND TPDR.pvsn_inst_cd = #{searchKeyword2}
+                    </otherwise>
+                </choose>
+            </if>
+            <if test='searchKeyword3 != null and searchKeyword3 != ""'>
+                AND TPDR.pvsn_rbprsn_nm LIKE '%'||#{searchKeyword3}||'%'
+            </if>
+    </select>
+
+    <!-- 실무담당자 목록 조회 -->
+    <select id="selectPrcafsChargerList" parameterType="ChargerManageVO" resultType="ChargerManageVO">
+        /* ChargerManageDAO.selectPrcafsChargerList */
+        SELECT * FROM (
+            SELECT ROW_NUMBER() OVER(ORDER BY INSTT_NM, PIC_NM) AS RN, TB.* FROM (
+                SELECT
+                    TM.mbr_nm AS PIC_NM
+                    ,TM.mbr_id AS MBR_ID
+                    ,TPIC.inst_nm AS INSTT_NM
+                    ,TM.dept_nm AS PIC_DEPT_NM
+                    ,TM.mbr_telno AS MBR_TELNO
+                    ,TM.mbr_email_addr AS PIC_EMAIL_ADDR
+                FROM
+                    tc_member TM
+                    INNER JOIN tc_pubs_instt_code_info TPIC ON TPIC.inst_cd = TM.inst_cd
+                WHERE TM.mbr_sttus = 'A'
+                    <if test='searchKeyword2 != null and searchKeyword2 != ""'>
+                        <choose>
+                            <when test='searchCondition5 == "Y"'>
+                                AND TM.inst_cd IN (
+                                    SELECT inst_cd
+                                    FROM tc_pubs_instt_code_info
+                                    WHERE up_inst_cd = #{searchKeyword2}
+                                    AND srch_yn = 'Y'
+                                    OR inst_cd = #{searchKeyword2}
+                                )
+                            </when>
+                            <otherwise>
+                                AND TM.inst_cd = #{searchKeyword2}
+                            </otherwise>
+                        </choose>
+                    </if>
+                    <if test='searchKeyword3 != null and searchKeyword3 != ""'>
+                        AND TM.mbr_nm LIKE '%'||#{searchKeyword3}||'%'
+                    </if>
+            ) TB
+        ) TB_ALL
+        <if test="recordCountPerPage > 0">
+            WHERE RN BETWEEN #{firstIndex} AND #{firstIndex} + #{recordCountPerPage} - 1
+        </if>
+    </select>
+
+    <!-- 실무담당자 총 개수 -->
+    <select id="selectPrcafsChargerTotalCnt" parameterType="ChargerManageVO" resultType="int">
+        /* ChargerManageDAO.selectPrcafsChargerTotalCnt */
+        SELECT COUNT(*) AS CNT
+        FROM
+            tc_member TM
+            INNER JOIN tc_pubs_instt_code_info TPIC ON TPIC.inst_cd = TM.inst_cd
+        WHERE TM.mbr_sttus = 'A'
+            <if test='searchKeyword2 != null and searchKeyword2 != ""'>
+                <choose>
+                    <when test='searchCondition5 == "Y"'>
+                        AND TM.inst_cd IN (
+                            SELECT inst_cd
+                            FROM tc_pubs_instt_code_info
+                            WHERE up_inst_cd = #{searchKeyword2}
+                            AND srch_yn = 'Y'
+                            OR inst_cd = #{searchKeyword2}
+                        )
+                    </when>
+                    <otherwise>
+                        AND TM.inst_cd = #{searchKeyword2}
+                    </otherwise>
+                </choose>
+            </if>
+            <if test='searchKeyword3 != null and searchKeyword3 != ""'>
+                AND TM.mbr_nm LIKE '%'||#{searchKeyword3}||'%'
+            </if>
+    </select>
+
+</mapper>

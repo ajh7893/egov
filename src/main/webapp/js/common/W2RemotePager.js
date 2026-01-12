@@ -42,13 +42,19 @@ class W2RemotePager {
             w2ui[this.options.gridName].destroy();
         }
 
-        $(this.options.gridTarget).w2grid({
+        const gridConfig = {
             name: this.options.gridName,
             show: this.options.show,
             recid: this.options.idField,
             columns: this.options.columns,
             onDblClick: this.options.onDblClick
-        });
+        };
+
+        if (this.options.toolbar) {
+            gridConfig.toolbar = this.options.toolbar;
+        }
+
+        $(this.options.gridTarget).w2grid(gridConfig);
 
         const $pageSize = $(this.options.pager.pageSize);
         if ($pageSize.length) {

@@ -185,10 +185,24 @@
         </div>
     </div>
 
+    <!-- 모달 컨테이너 -->
+    <div id="modal"></div>
+
     <script>
         const gridConfigs = {
             manager: {
                 url: "/lms/chm/selectRspnofcrChargerListJson.do",
+                toolbar: {
+                    items: [
+                        { type: 'spacer' },
+                        { type: 'button', id: 'excelDownload', text: '엑셀 다운로드', icon: 'w2ui-icon-check' }
+                    ],
+                    onClick: function(event) {
+                        if (event.target === 'excelDownload') {
+                            openExcelDownloadModal('manager');
+                        }
+                    }
+                },
                 columns: [
                     { field: 'rn', text: 'NO', size: '80px', attr: 'align-center' },
                     { field: 'insttTy', text: '등록방식', size: '80px', attr: 'align-center' },
@@ -202,6 +216,17 @@
             },
             practical: {
                 url: "/lms/chm/selectPrcafsChargerListJson.do",
+                toolbar: {
+                    items: [
+                        { type: 'spacer' },
+                        { type: 'button', id: 'excelDownload', text: '엑셀 다운로드', icon: 'w2ui-icon-check' }
+                    ],
+                    onClick: function(event) {
+                        if (event.target === 'excelDownload') {
+                            openExcelDownloadModal('practical');
+                        }
+                    }
+                },
                 columns: [
                     { field: 'rn', text: 'NO', size: '80px', attr: 'align-center' },
                     { field: 'picNm', text: '담당자명', size: '80px', attr: 'align-center' },
@@ -234,6 +259,7 @@
                     toolbar: true,
                     footer: false
                 },
+                toolbar: config.toolbar,
                 columns: config.columns,
                 getParams: function() {
                     return currentParams;
@@ -264,6 +290,72 @@
             currentParams = {};
             pager.loadPage(1);
         };
+
+        /**
+         * 엑셀 다운로드 모달 열기
+         */
+        function openExcelDownloadModal(type) {
+            $.ajax({
+                url: '/lms/chm/excelDownloadPopup.do',
+                method: 'GET',
+                success: function(html) {
+                    $('#modal').html(html);
+
+                    // 모달의 콜백 함수 설정
+                    window.excelDownloadCallback = function(reason) {
+                        downloadExcel(type, reason);
+                    };
+                },
+                error: function(xhr, status, error) {
+                    alert('모달을 불러오는 중 오류가 발생했습니다.');
+                    console.error(error);
+                }
+            });
+        }
+
+        /**
+         * 엑셀 다운로드 실행
+         */
+        function downloadExcel(type, reason) {
+            var url = '';
+            if (type === 'manager') {
+                url = '/lms/chm/downloadRspnofcrExcel.do';
+            } else if (type === 'practical') {
+                url = '/lms/chm/downloadPrcafsExcel.do';
+            }
+
+            // 검색 조건 수집
+            var params = SearchDataHandler.collectParams('#searchArea');
+            params.downloadReason = reason;
+            // TODO: 실제 사용자 정보를 세션에서 가져와서 설정
+            // params.userId = '${sessionScope.userId}';
+            // params.userName = '${sessionScope.userName}';
+
+            // form을 이용한 다운로드
+            var $form = $('<form>', {
+                method: 'POST',
+                action: url
+            });
+
+            $.each(params, function(key, value) {
+                if (value !== null && value !== undefined && value !== '') {
+                    $form.append($('<input>', {
+                        type: 'hidden',
+                        name: key,
+                        value: value
+                    }));
+                }
+            });
+
+            $('body').append($form);
+            $form.submit();
+            $form.remove();
+
+            // 모달 닫기
+            $('#modal').empty();
+
+            alert('엑셀 다운로드가 시작되었습니다.');
+        }
 
         $(document).ready(function() {
             SearchDataHandler.setDateBtn();

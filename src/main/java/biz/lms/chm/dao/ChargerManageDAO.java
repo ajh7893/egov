@@ -1,6 +1,7 @@
 package biz.lms.chm.dao;
 
 import biz.lms.chm.vo.ChargerManageVO;
+import biz.lms.chm.vo.ExcelDownloadLogVO;
 import egovframework.com.cmm.util.EgovProperties;
 import egovframework.com.cmm.util.SecurityUtil;
 import org.mybatis.spring.SqlSessionTemplate;
@@ -102,5 +103,64 @@ public class ChargerManageDAO {
     public int selectPrcafsChargerTotalCnt(ChargerManageVO searchVO) {
         Integer count = selectOne("ChargerManageDAO.selectPrcafsChargerTotalCnt", searchVO);
         return count != null ? count : 0;
+    }
+
+    /**
+     * 엑셀 다운로드 이력 저장
+     */
+    public int insertExcelDownloadLog(ExcelDownloadLogVO logVO) {
+        return sqlSessionTemplate.insert("ChargerManageDAO.insertExcelDownloadLog", logVO);
+    }
+
+    /**
+     * 제공책임관 전체 목록 조회 (엑셀 다운로드용)
+     */
+    public List<ChargerManageVO> selectRspnofcrChargerListForExcel(ChargerManageVO searchVO)
+            throws IOException, InvocationTargetException, SQLException {
+        List<ChargerManageVO> rspnofcrChargerList = selectList("ChargerManageDAO.selectRspnofcrChargerListForExcel", searchVO);
+
+        // 전화번호 복호화
+        for (int i = 0; i < rspnofcrChargerList.size(); i++) {
+            String mberTelno = rspnofcrChargerList.get(i).getTelno();
+
+            if (mberTelno != null && !mberTelno.trim().equals("")) {
+                // 전화번호 복호화
+                mberTelno = SecurityUtil.decryptBySeed(
+                        EgovProperties.getProperty("system.telno.seedKey").trim(), mberTelno);
+                if (mberTelno.equals("nullnullnull")) {
+                    mberTelno = "-";
+                }
+            } else {
+                mberTelno = "-";
+            }
+            rspnofcrChargerList.get(i).setTelno(mberTelno);
+        }
+        return rspnofcrChargerList;
+    }
+
+    /**
+     * 실무담당자 전체 목록 조회 (엑셀 다운로드용)
+     */
+    public List<ChargerManageVO> selectPrcafsChargerListForExcel(ChargerManageVO searchVO)
+            throws IOException, InvocationTargetException, SQLException {
+        List<ChargerManageVO> prcafsChargerList = selectList("ChargerManageDAO.selectPrcafsChargerListForExcel", searchVO);
+
+        // 전화번호 복호화
+        for (int i = 0; i < prcafsChargerList.size(); i++) {
+            String mbrTelno = prcafsChargerList.get(i).getMbrTelno();
+
+            if (mbrTelno != null && !mbrTelno.trim().equals("")) {
+                // 전화번호 복호화
+                mbrTelno = SecurityUtil.decryptBySeed(
+                        EgovProperties.getProperty("system.telno.seedKey").trim(), mbrTelno);
+                if (mbrTelno.equals("nullnullnull")) {
+                    mbrTelno = "-";
+                }
+            } else {
+                mbrTelno = "-";
+            }
+            prcafsChargerList.get(i).setMbrTelno(mbrTelno);
+        }
+        return prcafsChargerList;
     }
 }
